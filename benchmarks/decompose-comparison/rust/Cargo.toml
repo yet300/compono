@@ -1,0 +1,16 @@
+# Kept out of the main workspace.
+[workspace]
+
+[package]
+name = "compare"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+compono = { path = "../../../crates/compono" }
+
+[profile.release]
+panic = "abort"
+lto = "thin"
+codegen-units = 1

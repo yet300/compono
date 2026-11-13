@@ -1,0 +1,10 @@
+dist/
+out/
+target/
+Cargo.lock
+harness/android/.gradle/
+harness/android/app/build/
+harness/android/build/
+harness/android/local.properties
+harness/android/app/src/main/java/
+harness/android/app/src/main/jniLibs/

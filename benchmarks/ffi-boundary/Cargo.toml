@@ -1,0 +1,9 @@
+# Kept out of the main workspace so that binding generators stay out of its dependencies.
+[workspace]
+resolver = "3"
+members = ["scenario", "bolt", "uni"]
+
+[profile.release]
+panic = "abort"
+lto = "thin"
+codegen-units = 1

@@ -1,0 +1,9 @@
+[package]
+name = "ffi-scenario"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+compono = { path = "../../../crates/compono" }
+compono-ffi = { path = "../../../crates/compono-ffi" }

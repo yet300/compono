@@ -1,0 +1,13 @@
+[package]
+name = "bolt-bench"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["staticlib", "cdylib"]
+
+[dependencies]
+boltffi = "=0.32.1"
+compono-ffi = { path = "../../../crates/compono-ffi" }
+ffi-scenario = { path = "../scenario" }

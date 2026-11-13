@@ -1,0 +1,70 @@
+// Filled in and compiled once for each binding by run-android.sh.
+package compono.bench
+
+import android.app.Activity
+import android.os.Bundle
+import android.util.Log
+import @BINDINGS@.*
+
+class Sink : Listener {
+    var seen = 0
+
+    override fun commit(dirty: @DIRTY@, canBack: Boolean) {
+        seen += dirty.size
+    }
+
+    override fun schedulePump() {}
+}
+
+var blackhole = 0L
+
+inline fun measure(name: String, iterations: Int, body: () -> Unit) {
+    val samples = DoubleArray(31)
+    for (round in samples.indices) {
+        val start = System.nanoTime()
+        repeat(iterations) { body() }
+        samples[round] = (System.nanoTime() - start).toDouble() / iterations
+    }
+    samples.sort()
+    val median = samples[samples.size / 2]
+    val low = samples[samples.size / 10]
+    val high = samples[samples.size * 9 / 10]
+    Log.i("ComponoBench", "$name\t%.1f\t%.1f\t%.1f".format(median, low, high))
+}
+
+fun runBench() {
+    val sink = Sink()
+    val node = mount(sink)
+    // JIT and AOT settle during this first pass, which is not reported.
+    repeat(3) {
+        repeat(20_000) { noop(); blackhole += echo(7uL).toLong() }
+        repeat(2_000) {
+            blackhole += row(7uL).value.toLong()
+            blackhole += rows(0uL, 30u).size
+            blackhole += entries(30u).size
+            blackhole += dirty(30u).size
+            blackhole += article(3uL).body.length
+            blackhole += value(node).toLong()
+            check(tap(node))
+        }
+    }
+    measure("noop", 200_000) { noop() }
+    measure("echo", 200_000) { blackhole += echo(7uL).toLong() }
+    measure("row", 100_000) { blackhole += row(7uL).value.toLong() }
+    measure("rows_30", 20_000) { blackhole += rows(0uL, 30u).size }
+    measure("rows_1000", 1_000) { blackhole += rows(0uL, 1000u).size }
+    measure("entries_30", 20_000) { blackhole += entries(30u).size }
+    measure("dirty_30", 20_000) { blackhole += dirty(30u).size }
+    measure("article", 20_000) { blackhole += article(3uL).body.length }
+    measure("model", 100_000) { blackhole += value(node).toLong() }
+    measure("tap_with_commit", 50_000) { check(tap(node)) }
+    check(sink.seen > 0)
+    Log.i("ComponoBench", "# done $blackhole")
+}
+
+class MainActivity : Activity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        Thread(::runBench, "bench").start()
+    }
+}
