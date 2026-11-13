@@ -1,0 +1,18 @@
+[package]
+name = "showcase"
+description = "Every Compono navigation model in one app, with no UI dependency"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+compono = { path = "../../crates/compono" }
+serde = { version = "1", features = ["derive"] }
+
+[dev-dependencies]
+compono-test = { path = "../../crates/compono-test" }
+
+[lints]
+workspace = true
