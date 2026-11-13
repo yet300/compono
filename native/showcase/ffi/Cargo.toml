@@ -1,0 +1,25 @@
+# Kept out of the main workspace so that the binding generator stays out of its dependencies.
+[workspace]
+
+[package]
+name = "showcase-ffi"
+description = "The showcase exported to SwiftUI and Compose through BoltFFI"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["staticlib", "cdylib"]
+
+[dependencies]
+boltffi = "=0.32.1"
+compono = { path = "../../../crates/compono" }
+compono-ffi = { path = "../../../crates/compono-ffi" }
+compono-tokio = { path = "../../../crates/compono-tokio" }
+showcase = { path = "../../../examples/showcase" }
+tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "time"] }
+
+[profile.release]
+panic = "abort"
+lto = "thin"
+codegen-units = 1
