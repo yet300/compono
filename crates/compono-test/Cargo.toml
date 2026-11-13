@@ -1,0 +1,18 @@
+[package]
+name = "compono-test"
+description = "Headless host, virtual time and host conformance checks for Compono"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+readme = "README.md"
+keywords = ["compono", "testing", "ui", "navigation"]
+categories = ["development-tools::testing", "gui"]
+
+[dependencies]
+compono = { version = "1.0.0-rc.1", path = "../compono" }
+
+[dev-dependencies]
+
+[lints]
+workspace = true
