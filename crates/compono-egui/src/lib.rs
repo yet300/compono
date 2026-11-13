@@ -38,12 +38,14 @@
 
 mod back;
 mod host;
+mod motion;
 mod navigation;
 mod outbox;
 mod window;
 
 pub use back::back_requested;
 pub use host::{BeforeDraw, EguiHost};
+pub use motion::{StackView, set_motion, set_motion_preference};
 pub use navigation::{ListView, RouterView};
 pub use outbox::Outbox;
 pub use window::window_phase;

@@ -8,10 +8,6 @@ use core::fmt;
 type Build<R, H, P> = Box<dyn Fn(&R, &mut Cx<'_, P>) -> H>;
 
 struct Entry<R, H> {
-    #[cfg_attr(
-        not(feature = "serde"),
-        expect(dead_code, reason = "only persistence reads this")
-    )]
     key: u64,
     route: R,
     child: H,
@@ -115,6 +111,15 @@ impl<R: 'static, H: 'static, P: Component> Slot<R, H, P> {
     /// Returns the route of the open entry.
     pub fn route(&self) -> Option<&R> {
         self.entry.as_ref().map(|entry| &entry.route)
+    }
+
+    /// Returns a number that identifies the open entry's visit, for UI state keys.
+    ///
+    /// Each `show` gives a new key, even for an equal route, so a UI can tell a
+    /// dialog replaced by another from one that stayed open.
+    #[must_use]
+    pub fn active_key(&self) -> Option<u64> {
+        self.entry.as_ref().map(|entry| entry.key)
     }
 
     /// Returns whether an entry is open.

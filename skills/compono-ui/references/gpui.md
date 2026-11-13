@@ -104,6 +104,13 @@ pub fn view(owner: &mut AppView, handle: Handle<Counters>, cx: &mut Context<'_, 
   returns a `uniform_list`. Pass `.window(...)`, or every draw reports a window.
   Rows have no views of their own.
 - GPUI reports no minimise event, so the phase is `Visible` or `Focused`.
+- Router views animate with `compono_motion::Motion::desktop()`, a 150 ms fade;
+  `compono_gpui::set_motion(Motion::web())` changes it for the whole application. A `Stack` moves its
+  new entry in, a `Slot` fades in, `Pages` slide by page order and `Panels` in
+  `PanelsMode::Single` slide the deepest panel in. An entry that leaves disappears at
+  once, because GPUI cannot redraw a removed component.
+  GPUI applies offsets and opacity, not scale. GPUI's `cx.set_reduce_motion(true)`
+  makes every router fade in place.
 
 ## Testing
 

@@ -34,7 +34,8 @@ private struct ComponoLifecycle: ViewModifier {
                 guard tracking else { return }
                 tracking = false
                 let flung = value.predictedEndTranslation.width / width > 0.6
-                tree.finishGesture(commit: flung || value.translation.width / width > 0.4)
+                let commit = flung || value.translation.width / width > 0.4
+                tree.finishGesture(commit: commit, speed: value.velocity.width / width)
             }
     }
 

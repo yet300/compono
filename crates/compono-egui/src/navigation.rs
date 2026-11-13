@@ -1,6 +1,7 @@
 //! Draws routers. Every UI adapter offers [`RouterView`] and [`ListView`].
 
 use crate::Outbox;
+use crate::motion::{self, StackView};
 use compono::router::items::{Items, OVERSCAN, next_window};
 use compono::router::pages::Pages;
 use compono::router::panels::{Panel, PanelTypes, Panels};
@@ -25,18 +26,19 @@ pub trait RouterView<'a> {
 impl<'a, R: 'static, H: 'static, P: Component> RouterView<'a> for Stack<R, H, P> {
     type Child = &'a H;
 
-    fn view(&'a self, ui: &mut Ui, mut content: impl FnMut(&mut Ui, &'a H)) {
-        ui.push_id(self.active_key(), |ui| content(ui, self.active()));
+    /// Draws the active entry with the context's motion, `Motion::desktop()`
+    /// unless `set_motion` chose another. `StackView` chooses one for this stack.
+    fn view(&'a self, ui: &mut Ui, content: impl FnMut(&mut Ui, &'a H)) {
+        StackView::new(self).show(ui, content);
     }
 }
 
 impl<'a, R: 'static, H: 'static, P: Component> RouterView<'a> for Slot<R, H, P> {
     type Child = &'a H;
 
-    fn view(&'a self, ui: &mut Ui, mut content: impl FnMut(&mut Ui, &'a H)) {
-        if let Some(child) = self.active() {
-            content(ui, child);
-        }
+    /// Draws the entry, fading it in when it opens and out when it closes.
+    fn view(&'a self, ui: &mut Ui, content: impl FnMut(&mut Ui, &'a H)) {
+        motion::slot(self, ui, content);
     }
 }
 
@@ -46,22 +48,19 @@ where
 {
     type Child = &'a H;
 
-    fn view(&'a self, ui: &mut Ui, mut content: impl FnMut(&mut Ui, &'a H)) {
-        if let Some(child) = self.active() {
-            ui.push_id(self.selected(), |ui| content(ui, child));
-        }
+    /// Draws the selected page, sliding toward it by page order.
+    fn view(&'a self, ui: &mut Ui, content: impl FnMut(&mut Ui, &'a H)) {
+        motion::pages(self, ui, content);
     }
 }
 
 impl<'a, T: PanelTypes, P: Component> RouterView<'a> for Panels<T, P> {
     type Child = Panel<'a, T>;
 
-    fn view(&'a self, ui: &mut Ui, mut content: impl FnMut(&mut Ui, Panel<'a, T>)) {
-        ui.columns(self.visible().count().max(1), |columns| {
-            for (ui, panel) in columns.iter_mut().zip(self.visible()) {
-                content(ui, panel);
-            }
-        });
+    /// Draws the visible panels side by side. When only one fits, the deepest
+    /// panel slides in over the one it covers.
+    fn view(&'a self, ui: &mut Ui, content: impl FnMut(&mut Ui, Panel<'a, T>)) {
+        motion::panels(self, ui, content);
     }
 }
 

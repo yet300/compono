@@ -1,5 +1,7 @@
 package compono.android
 
+import androidx.activity.BackEventCompat
+
 import android.os.Handler
 import android.os.Looper
 import androidx.compose.animation.core.animate
@@ -47,6 +49,23 @@ class BackGestureState internal constructor(
     /** How far the gesture has gone, from 0 to 1. */
     var progress by mutableFloatStateOf(0f)
         internal set
+
+    /** How far a committed gesture has animated its entry away, from 0 to 1. */
+    var finish by mutableFloatStateOf(0f)
+        internal set
+
+    /** The edge the gesture started from. */
+    internal var edge by mutableStateOf(SwipeEdge.Left)
+
+    /** How far the touch has moved down since the gesture started, in pixels. */
+    internal var touchTravel by mutableFloatStateOf(0f)
+
+    private var touchStart: Float? = null
+
+    internal fun touch(y: Float) {
+        val start = touchStart ?: y.also { touchStart = it }
+        touchTravel = y - start
+    }
 
     /** Whether the finger is up and the gesture is animating to its end. */
     internal var settlingTo: Boolean? = null
@@ -138,9 +157,19 @@ class ComponoTree(private val post: (Runnable) -> Unit = mainThreadPost()) : Com
         return true
     }
 
-    /** Moves the gesture. */
-    fun updateGesture(progress: Float) {
-        gesture?.progress = progress.coerceIn(0f, 1f)
+    /**
+     * Moves the gesture. [swipeEdge] and [touchY] are AndroidX `BackEventCompat`'s:
+     * `EDGE_LEFT`, `EDGE_RIGHT` or `EDGE_NONE`, and the touch's position in pixels.
+     */
+    fun updateGesture(progress: Float, swipeEdge: Int = BackEventCompat.EDGE_LEFT, touchY: Float = 0f) {
+        val current = gesture ?: return
+        current.progress = progress.coerceIn(0f, 1f)
+        current.edge = when (swipeEdge) {
+            BackEventCompat.EDGE_LEFT -> SwipeEdge.Left
+            BackEventCompat.EDGE_RIGHT -> SwipeEdge.Right
+            else -> SwipeEdge.None
+        }
+        current.touch(touchY)
     }
 
     /** Ends the gesture, animating a stack to whichever side it ended on. */
@@ -149,8 +178,14 @@ class ComponoTree(private val post: (Runnable) -> Unit = mainThreadPost()) : Com
         current.settlingTo = commit
         try {
             if (current.target in stacks) {
-                animate(current.progress, if (commit) 1f else 0f, animationSpec = tween(SETTLE_MILLIS)) { value, _ ->
-                    current.progress = value
+                // A commit animates the entry away from where the gesture left it; a
+                // cancel brings the gesture back to its start.
+                if (commit) {
+                    animate(0f, 1f, animationSpec = tween(SETTLE_MILLIS)) { value, _ -> current.finish = value }
+                } else {
+                    animate(current.progress, 0f, animationSpec = tween(SETTLE_MILLIS)) { value, _ ->
+                        current.progress = value
+                    }
                 }
             }
         } finally {
@@ -169,6 +204,9 @@ class ComponoTree(private val post: (Runnable) -> Unit = mainThreadPost()) : Com
             bridge?.backCancel()
         }
     }
+
+    /** Returns whether the component at [node] still exists. */
+    internal fun containsNode(node: Long): Boolean = bridge?.contains(node) ?: false
 
     internal fun registerStack(owner: Long) {
         stacks[owner] = (stacks[owner] ?: 0) + 1

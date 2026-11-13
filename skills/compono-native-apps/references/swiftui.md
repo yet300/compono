@@ -67,7 +67,10 @@ struct CountersView: View {
 
 - `let _ = tree?.observe(component.node())` subscribes the view to its component.
 - `ChildStack(tree:owner:active:previous:)` gives the interactive swipe-back.
-  `previous` is the entry Back reveals.
+  `previous` is the entry Back reveals. It moves back only when the shown entry
+  was destroyed, so `bring_to_front` moves forward. `animation:` takes a
+  `StackAnimation(transition:animation:back:)`; `.platform` (the default) slides
+  on UIKit's push spring (response 0.29 s), and `.fade` and `.none` are ready-made.
 - `ChildSlot(active:)` for dialogs and sheets, `ChildPages(active:)`,
   `ChildPanels(panels:)` and `ChildList(count:overscan:onWindow:)` for long lists;
   it reports the rows on screen plus 10 spare rows by default.

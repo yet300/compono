@@ -12,6 +12,7 @@ categories = ["gui"]
 [dependencies]
 compono = { version = "1.0.0-rc.1", path = "../compono" }
 compono-desktop = { version = "1.0.0-rc.1", path = "../compono-desktop" }
+compono-motion = { version = "1.0.0-rc.1", path = "../compono-motion" }
 egui = "0.37"
 
 [dev-dependencies]

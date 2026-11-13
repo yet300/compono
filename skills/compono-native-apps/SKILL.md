@@ -122,7 +122,10 @@ Read the reference for the platform you are writing:
 - SwiftUI: [references/swiftui.md](references/swiftui.md)
 - Compose: [references/compose.md](references/compose.md)
 
-Both give the same router views: `ChildStack` (transitions and interactive Back),
+Both give the same router views: `ChildStack` (transitions and interactive Back,
+native by default: shared axis and Material predictive Back on Android, the iOS
+slide and swipe-back on Apple systems, each faded in place when the system asks for
+reduced motion),
 `ChildSlot`, `ChildPages`, `ChildPanels` and `ChildList` (reports its window to an
 `Items`). A screen subscribes to its component with `observe(component.node())`
 and redraws when that component changes.

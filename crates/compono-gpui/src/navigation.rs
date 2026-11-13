@@ -1,9 +1,10 @@
 //! Draws routers. Every UI adapter offers [`RouterView`] and [`ListView`].
 
+use crate::motion::{self, Animated, Rule};
 use crate::{TreeView, update};
 use compono::router::items::{OVERSCAN, next_window};
 use compono::router::pages::Pages;
-use compono::router::panels::{Panel, PanelTypes, Panels};
+use compono::router::panels::{Panel, PanelTypes, Panels, PanelsMode};
 use compono::router::slot::Slot;
 use compono::router::stack::Stack;
 use compono::{Component, Handle};
@@ -31,8 +32,20 @@ impl<'a, R: 'static, H: 'static, P: Component> RouterView<'a> for Stack<R, H, P>
     type Child = &'a H;
     type Output = AnyElement;
 
+    /// Builds the active entry, moving in with the application's motion.
     fn view(&'a self, mut content: impl FnMut(&'a H) -> AnyElement) -> AnyElement {
-        content(self.active())
+        let keys = self.entries().map(|(key, _route)| key).collect();
+        let child = content(self.active());
+        let rule = Rule::Stack(keys);
+        Animated::new(
+            "compono-stack",
+            self,
+            child,
+            rule,
+            self.active_key(),
+            motion::app_motion(),
+        )
+        .into_any_element()
     }
 }
 
@@ -40,8 +53,13 @@ impl<'a, R: 'static, H: 'static, P: Component> RouterView<'a> for Slot<R, H, P> 
     type Child = &'a H;
     type Output = Option<AnyElement>;
 
+    /// Builds the entry, fading in when it opens.
     fn view(&'a self, content: impl FnMut(&'a H) -> AnyElement) -> Option<AnyElement> {
-        self.active().map(content)
+        let key = self.active_key()?;
+        let child = self.active().map(content)?;
+        let motion = motion::slot_motion(motion::app_motion());
+        let animated = Animated::new("compono-slot", self, child, Rule::Slot, key, motion);
+        Some(animated.into_any_element())
     }
 }
 
@@ -52,8 +70,13 @@ where
     type Child = &'a H;
     type Output = Option<AnyElement>;
 
+    /// Builds the selected page, sliding in by page order.
     fn view(&'a self, content: impl FnMut(&'a H) -> AnyElement) -> Option<AnyElement> {
-        self.active().map(content)
+        let child = self.active().map(content)?;
+        let motion = motion::page_motion(motion::app_motion());
+        let index = self.selected() as u64;
+        let animated = Animated::new("compono-pages", self, child, Rule::Pages, index, motion);
+        Some(animated.into_any_element())
     }
 }
 
@@ -61,8 +84,10 @@ impl<'a, T: PanelTypes, P: Component> RouterView<'a> for Panels<T, P> {
     type Child = Panel<'a, T>;
     type Output = AnyElement;
 
+    /// Builds the visible panels side by side. When one fits, the deepest panel
+    /// slides in over the one it covers.
     fn view(&'a self, mut content: impl FnMut(Panel<'a, T>) -> AnyElement) -> AnyElement {
-        div()
+        let row = div()
             .flex()
             .gap_3()
             .size_full()
@@ -70,7 +95,13 @@ impl<'a, T: PanelTypes, P: Component> RouterView<'a> for Panels<T, P> {
                 self.visible()
                     .map(|panel| div().flex_1().h_full().min_w(px(0.0)).child(content(panel))),
             )
-            .into_any_element()
+            .into_any_element();
+        let rule = Rule::Panels {
+            single: self.mode() == PanelsMode::Single,
+        };
+        let key = motion::panel_key(self.keys(), self.shown());
+        let motion = motion::panel_motion(motion::app_motion());
+        Animated::new("compono-panels", self, row, rule, key, motion).into_any_element()
     }
 }
 

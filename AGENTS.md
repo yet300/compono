@@ -32,6 +32,7 @@ profile is allocation-conscious, with budgets enforced by
 - `crates/compono/src/tree` is the single owner of components and its bookkeeping.
 - `crates/compono/src/router` holds `Stack`, `Slot`, `Pages`, `Panels`, `Items` and `ChildSet`. They use only public `Cx` methods.
 - `crates/compono/src/concurrency` holds `Sender`, tasks and `WakeSignal`.
+- `crates/compono-motion` holds router transitions: curves, springs, presets, `StackChange` and `TransitionState`. It is `no_std`, has no dependencies and does not allocate. `golden/motion.csv` is its output for the Swift and Kotlin tests; regenerate it with its `golden` example.
 - `crates/compono-ffi` is the Rust side of native UIs. It depends on no binding generator.
 - `crates/compono-test` has the recording host, virtual time and `check_host`.
 - `crates/compono-desktop` and `crates/compono-web` are platform crates. `compono-web/src/history.rs` is plain logic tested natively; `compono-web/src/page` is built only for `wasm32`.
@@ -50,6 +51,7 @@ cargo clippy -p compono --no-default-features --features serde -- -D warnings
 cargo test --workspace
 cargo test -p compono --no-default-features
 cargo check -p compono --no-default-features --target thumbv7em-none-eabihf
+cargo check -p compono-motion --target thumbv7em-none-eabihf
 cargo clippy -p compono-web -p showcase-web --target wasm32-unknown-unknown -- -D warnings
 RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps
 ```

@@ -120,13 +120,21 @@ impl<R: Clone + Eq + Hash + 'static, H: 'static, P: Component> Pages<R, H, P> {
         self.selected
     }
 
-    /// Returns the value of the selected page.
-    pub fn active(&self) -> Option<&H> {
-        let route = self.routes.get(self.selected)?;
+    /// Returns the value of the page at `index`, if its component exists.
+    ///
+    /// Only pages within `retain` of the selected one exist, so a UI can draw the
+    /// page it leaves while it slides out.
+    pub fn child(&self, index: usize) -> Option<&H> {
+        let route = self.routes.get(index)?;
         self.children
             .iter()
             .find(|(key, _child, _phase)| *key == route)
             .map(|(_key, child, _phase)| child)
+    }
+
+    /// Returns the value of the selected page.
+    pub fn active(&self) -> Option<&H> {
+        self.child(self.selected)
     }
 
     /// Returns the number of pages that currently have a component.

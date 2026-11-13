@@ -1,17 +1,5 @@
 import SwiftUI
 
-/// How a stack moves between entries.
-public enum StackAnimation: Sendable {
-    /// The new entry slides over the old one, and Back slides it off.
-    case slide
-    case fade
-    case none
-}
-
-private let transitionDuration = 0.28
-/// How far a covered entry sits to the left, as a share of the width.
-private let parallax: CGFloat = 0.3
-
 /// Draws the active entry of a stack, with transitions and an interactive Back.
 ///
 /// A component is destroyed as soon as it leaves the stack. The view on its way out
@@ -29,6 +17,9 @@ public struct ChildStack<Child: ComponoChild, Content: View>: View {
     @State private var progress: CGFloat = 0
     @State private var forward = true
     @State private var generation = 0
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    /// Pages move by their order instead of by what left the stack.
+    private var pagesOrder = false
 
     /// Creates a stack that moves between entries but has no Back gesture.
     public init(
@@ -43,6 +34,12 @@ public struct ChildStack<Child: ComponoChild, Content: View>: View {
         self.animation = animation
         self.content = content
         _shown = State(initialValue: active)
+    }
+
+    /// Creates a stack that moves by the order of its entries' keys, for pages.
+    init(pageOrder active: Child, animation: StackAnimation, @ViewBuilder content: @escaping (Child) -> Content) {
+        self.init(active: active, animation: animation, content: content)
+        pagesOrder = true
     }
 
     /// Creates a stack that follows Back gestures aimed at `owner`.
@@ -67,10 +64,12 @@ public struct ChildStack<Child: ComponoChild, Content: View>: View {
 
     private struct Layer: Identifiable {
         let child: Child
-        let shift: CGFloat
-        let opacity: Double
+        let style: LayerStyle
         var id: Int64 { child.key }
     }
+
+    /// The animation in use: reduced when the system asks for reduced motion.
+    private var chosen: StackAnimation { reduceMotion ? animation.reduced() : animation }
 
     private var top: Child { active.key == shown.key ? active : shown }
 
@@ -81,26 +80,23 @@ public struct ChildStack<Child: ComponoChild, Content: View>: View {
 
     /// Returns the entries to draw, from bottom to top.
     private var layers: [Layer] {
+        let chosen = chosen
         if let gesture = gestureProgress {
-            let under = previous.map { Layer(child: $0, shift: -parallax * (1 - gesture), opacity: 1) }
-            return (under.map { [$0] } ?? []) + [Layer(child: top, shift: gesture, opacity: 1)]
+            let styles = backStyles(chosen.back, progress: gesture)
+            let under = previous.map { Layer(child: $0, style: styles.under) }
+            return (under.map { [$0] } ?? []) + [Layer(child: top, style: styles.over)]
         }
-        guard let outgoing else { return [Layer(child: top, shift: 0, opacity: 1)] }
-        if animation == .fade {
-            return [
-                Layer(child: outgoing, shift: 0, opacity: 1 - progress),
-                Layer(child: top, shift: 0, opacity: progress),
-            ]
-        }
+        guard let outgoing else { return [Layer(child: top, style: .rest)] }
+        let transition = chosen.transition
         if forward {
             return [
-                Layer(child: outgoing, shift: -parallax * progress, opacity: 1),
-                Layer(child: top, shift: 1 - progress, opacity: 1),
+                Layer(child: outgoing, style: layerStyle(transition, role: .exitBack, progress: progress)),
+                Layer(child: top, style: layerStyle(transition, role: .enterFront, progress: progress)),
             ]
         }
         return [
-            Layer(child: top, shift: -parallax * (1 - progress), opacity: 1),
-            Layer(child: outgoing, shift: progress, opacity: 1),
+            Layer(child: top, style: layerStyle(transition, role: .enterBack, progress: progress)),
+            Layer(child: outgoing, style: layerStyle(transition, role: .exitFront, progress: progress)),
         ]
     }
 
@@ -112,8 +108,10 @@ public struct ChildStack<Child: ComponoChild, Content: View>: View {
                     content(layer.child)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(.background)
-                        .offset(x: layer.shift * geometry.size.width)
-                        .opacity(layer.opacity)
+                        .overlay(Color.black.opacity(layer.style.dim).allowsHitTesting(false))
+                        .scaleEffect(layer.style.scale)
+                        .offset(x: layer.style.offsetX * geometry.size.width)
+                        .opacity(layer.style.opacity)
                         .allowsHitTesting(layer.id == layers.last?.id)
                 }
             }
@@ -123,22 +121,41 @@ public struct ChildStack<Child: ComponoChild, Content: View>: View {
         // by the window instead.
         .onAppear { if let owner { tree?.registerStack(owner) } }
         .onDisappear { if let owner { tree?.unregisterStack(owner) } }
-        .onChange(of: active.key) { _, _ in moveToActive() }
+        .onChange(of: Keys(active: active.key, below: previous?.key)) { old, new in
+            if old.active != new.active { moveToActive(below: old.below) }
+        }
     }
 
-    private func moveToActive() {
+    /// The keys a change of entry is judged by: `below` is the entry Back reveals.
+    private struct Keys: Equatable {
+        let active: Int64
+        let below: Int64?
+    }
+
+    private func direction(from shown: Child, below: Int64?) -> StackDirection {
+        if pagesOrder {
+            return active.key >= shown.key ? .forward : .back
+        }
+        // Without a tree nothing tells a parked entry from a destroyed one, so a
+        // stack without a tree always moves forward.
+        let remains = tree?.contains(shown.node) ?? true
+        return stackDirection(shown: shown.key, active: active.key, below: below, shownRemains: remains)
+    }
+
+    private func moveToActive(below: Int64?) {
         let committed = owner.map { tree?.takeCommitted($0) ?? false } ?? false
-        guard !committed, animation != .none else {
+        let chosen = chosen
+        guard !committed, chosen.transition != .none else {
             shown = active
             outgoing = nil
             return
         }
-        forward = active.key >= shown.key
+        forward = direction(from: shown, below: below) == .forward
         outgoing = shown
         shown = active
         generation += 1
         let finished = generation
-        withAnimation(.easeInOut(duration: transitionDuration), completionCriteria: .logicallyComplete) {
+        withAnimation(chosen.animation, completionCriteria: .logicallyComplete) {
             progress = 1
         } completion: {
             guard finished == generation else { return }
@@ -180,7 +197,7 @@ public struct ChildPages<Child: ComponoChild, Content: View>: View {
 
     public var body: some View {
         if let active {
-            ChildStack(active: active, animation: .slide, content: content)
+            ChildStack(pageOrder: active, animation: .slide, content: content)
         }
     }
 }

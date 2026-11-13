@@ -14,5 +14,5 @@ mod page;
 #[cfg(target_arch = "wasm32")]
 pub use page::{
     Address, BrowserHistory, PageEvent, PageEvents, SessionStore, Sleep, WebSpawner, page_phase,
-    sleep,
+    prefers_reduced_motion, sleep,
 };

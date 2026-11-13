@@ -12,7 +12,8 @@ categories = ["gui"]
 [dependencies]
 compono = { version = "1.0.0-rc.1", path = "../compono" }
 compono-desktop = { version = "1.0.0-rc.1", path = "../compono-desktop" }
-iced = { version = "0.14", default-features = false, features = ["thread-pool"] }
+compono-motion = { version = "1.0.0-rc.1", path = "../compono-motion" }
+iced = { version = "0.14", default-features = false, features = ["advanced", "thread-pool"] }
 
 [dev-dependencies]
 compono-test = { version = "1.0.0-rc.1", path = "../compono-test" }

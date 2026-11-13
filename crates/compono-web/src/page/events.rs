@@ -8,6 +8,21 @@ use wasm_bindgen::JsValue;
 use wasm_bindgen::closure::Closure;
 use web_sys::{Event, EventTarget, PopStateEvent, VisibilityState};
 
+/// Returns whether the user asked the system for reduced motion, from
+/// `matchMedia("(prefers-reduced-motion: reduce)")`. An application passes it to
+/// its UI adapter, such as `compono_egui::set_motion_preference`.
+#[must_use]
+pub fn prefers_reduced_motion() -> bool {
+    web_sys::window()
+        .and_then(|window| {
+            window
+                .match_media("(prefers-reduced-motion: reduce)")
+                .ok()
+                .flatten()
+        })
+        .is_some_and(|query| query.matches())
+}
+
 /// Something the page reports to the application.
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[non_exhaustive]
