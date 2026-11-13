@@ -5,12 +5,13 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 readme = "README.md"
 keywords = ["compono", "testing", "ui", "navigation"]
 categories = ["development-tools::testing", "gui"]
 
 [dependencies]
-compono = { version = "1.0.0-rc.1", path = "../compono" }
+compono = { version = "1.0.0-rc", path = "../compono" }
 
 [dev-dependencies]
 

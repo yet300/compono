@@ -3,7 +3,10 @@
 All crates of the workspace share one version. `VERSIONING.md` says what a version
 number promises.
 
-## Unreleased
+## 1.0.0-rc
+
+The first release candidate. No version was published before it, so "changed"
+and "fixed" below compare with the unpublished development tree.
 
 ### Added
 
@@ -54,98 +57,6 @@ number promises.
   exists and the visit key of each open panel, so a UI can animate between them.
 - `router::Router`, the trait of every router, with `router_ids` and `destroy`.
   The six built-in routers and the showcase's `Filmstrip` implement it.
-
-### Changed
-
-- The Swift package's `StackAnimation` is now a struct with `transition`
-  (`StackTransition`), `animation` (a SwiftUI `Animation`) and `back`
-  (`BackGestureStyle`). `.slide`, `.fade` and `.none` remain, and `.platform`, the
-  default, slides on UIKit's push spring with a 30 % parallax and a 12 % shade, all
-  three measured on `UINavigationController` pushes. `Motion::cupertino()` and
-  `Spring::CUPERTINO` use the same spring: response 0.29 s, critically damped.
-  A released swipe settles on that spring at the finger's speed:
-  `ComponoTree.finishGesture(commit:speed:)`. With `accessibilityReduceMotion` the
-  stack fades in place.
-- The Compose library's `StackAnimation` is now a class with `transition`
-  (`StackTransition`), `spec` and `back` (`BackAnimation`). The default is Material:
-  shared axis X on `spring(0.9f, 700f)` with `BackAnimation.Predictive`, which
-  follows `BackEventCompat`'s edge and touch. `StackAnimation.Slide`, `Fade` and
-  `None` remain. `ComponoTree.updateGesture` takes the event's edge and touch, and
-  "Remove animations" (animator duration scale 0) turns stack motion off.
-
-- `Tree::set_work_limit` no longer bounds polls of `Cx::perform_local` tasks,
-  which have their own limit, `Tree::set_poll_limit`. Before, one limit of
-  1 048 576 covered both, and a pump could run that many polls of user code.
-- `Option<NodeId>` is 8 bytes instead of 12, and each tree slot 40 bytes smaller
-  on 64-bit targets. `NodeId` keeps its generation plus one in a `NonZeroU32`.
-  `NodeId::to_bits` gives the same numbers as before for every id a tree issues.
-  `NodeId::from_bits` of bits with generation `u32::MAX`, which `to_bits` never
-  returns, gives an id that matches no component.
-- Saved state records, for each entry, a stable FNV-1a hash of the component's new
-  `Persist::KIND` and its new `Persist::VERSION`. `Cx::restored` gives `None` for
-  state saved by a component of another kind at the same place, and for bytes left
-  after the value; it calls the new `Persist::migrate` for state of another
-  version. An empty `KIND`, the default, checks no kind, so existing
-  implementations compile and restore as before. The saved envelope changed: bytes
-  saved by an earlier version give `RestoreOutcome::Corrupt` or
-  `RestoreOutcome::SchemaChanged`, and the application starts clean. The showcase
-  sets a `KIND` on every saved component and raises its schema to 3.
-- `Cx::destroy` and `Cx::set_child_phase` return `Result<(), NotOwnChild>`, as
-  `Cx::send` does. A target that is not a live direct child, such as a grandchild
-  or a child already removed, gives `Err(NotOwnChild)`. Before, both did nothing
-  and returned `()`.
-- `Tree::set_work_limit` now bounds all the work of one operation together:
-  delivering queued messages and outputs, and removing the components of dropped
-  routers and scopes, one unit per component. Before, removals were not counted and
-  each pass of the loop in one operation started a fresh limit, so dropping a large
-  router removed all its components in one operation.
-- `Cx::reusing_routers` is removed. Use `Cx::replace_router`, which takes the old
-  router itself, so two live routers can no longer hold one id. A router id no
-  longer has a generation, and the tree keeps no record of moved ids.
-- `router_ids` and `destroy` of `Stack`, `Slot`, `Pages`, `Panels`, `Items` and
-  `ChildSet` are methods of `router::Router` instead of inherent methods. Import
-  the trait to call them. `router_ids` returns `impl IntoIterator<Item = RouterId>`
-  instead of an array.
-- Numbered children past 2^61 in one parent save nothing, so their keys never
-  reach those of named routers.
-- `Tree::back_progress` and `BackGesture` are removed: a gesture's progress stays
-  in the UI, which animates it. `Tree::gesture` is replaced by
-  `Tree::gesture_target`, which returns the gesture's target `NodeId`.
-- `compono_ffi::Project`, `NativeChild`, `RouterEntry` and `NativeTree::model` are
-  removed. An application reads its models in its own exported functions with
-  `NativeTree::read`, as the native showcase does.
-
-### Fixed
-
-- `ChildStack` in the Swift package and the Compose library played the Back
-  animation after `bring_to_front` of an older entry, because it compared entry
-  keys. It now moves back only when the entry it showed is gone and the new one was
-  below it. The Compose `ChildStack` takes a new optional `node` parameter, the
-  address of an entry's component, to tell a parked entry from a destroyed one.
-- A task started with `Cx::perform` whose future or `to_msg` panics no longer
-  leaves its guard in the component until the component is removed. In builds that
-  unwind, the panic stops at the task, the next pump releases the guard, and the
-  component receives nothing from it.
-- A `NativeTree` dropped on a thread other than its owner calls
-  `Platform::schedule_pump`, so the owner frees the tree, its `Platform` and the
-  native listener. Before, they stayed in memory until the owner happened to make
-  another call. `NativeTree` now holds its `Platform`.
-- A task started with `Cx::perform_local` is listed for the next pump once, however
-  often its waker is called, and the host is woken once for it. Before, every
-  wake-up added an entry and woke the host, so a waker called again and again from
-  another thread between two pumps grew the list without limit.
-- A save made while a work limit had left a dropped router's entries for a later
-  operation saved them too, under the keys their replacement now uses. A later
-  launch could give the replacement's children that state. Entries queued for
-  removal are no longer saved.
-
-## 1.0.0-rc.1
-
-The first release candidate. No version was published before it, so "changed" below
-compares with the unpublished 0.0.0 tree.
-
-### Added
-
 - `Tree::is_poisoned` and `NativeError::Poisoned`. A tree whose operation unwound
   from a caught panic runs no more user code and commits nothing. Before, it went
   on half-changed, with the component that panicked out of its slot.
@@ -213,12 +124,65 @@ compares with the unpublished 0.0.0 tree.
 - The example `navigation_cost` also measures hiding and showing the component that
   owns a stack.
 
-### Licence
-
-- Compono is licensed under Apache-2.0. Each crate's package includes `LICENSE`.
-
 ### Changed
 
+- The Swift package's `StackAnimation` is now a struct with `transition`
+  (`StackTransition`), `animation` (a SwiftUI `Animation`) and `back`
+  (`BackGestureStyle`). `.slide`, `.fade` and `.none` remain, and `.platform`, the
+  default, slides on UIKit's push spring with a 30 % parallax and a 12 % shade, all
+  three measured on `UINavigationController` pushes. `Motion::cupertino()` and
+  `Spring::CUPERTINO` use the same spring: response 0.29 s, critically damped.
+  A released swipe settles on that spring at the finger's speed:
+  `ComponoTree.finishGesture(commit:speed:)`. With `accessibilityReduceMotion` the
+  stack fades in place.
+- The Compose library's `StackAnimation` is now a class with `transition`
+  (`StackTransition`), `spec` and `back` (`BackAnimation`). The default is Material:
+  shared axis X on `spring(0.9f, 700f)` with `BackAnimation.Predictive`, which
+  follows `BackEventCompat`'s edge and touch. `StackAnimation.Slide`, `Fade` and
+  `None` remain. `ComponoTree.updateGesture` takes the event's edge and touch, and
+  "Remove animations" (animator duration scale 0) turns stack motion off.
+
+- `Tree::set_work_limit` no longer bounds polls of `Cx::perform_local` tasks,
+  which have their own limit, `Tree::set_poll_limit`. Before, one limit of
+  1 048 576 covered both, and a pump could run that many polls of user code.
+- `Option<NodeId>` is 8 bytes instead of 12, and each tree slot 40 bytes smaller
+  on 64-bit targets. `NodeId` keeps its generation plus one in a `NonZeroU32`.
+  `NodeId::to_bits` gives the same numbers as before for every id a tree issues.
+  `NodeId::from_bits` of bits with generation `u32::MAX`, which `to_bits` never
+  returns, gives an id that matches no component.
+- Saved state records, for each entry, a stable FNV-1a hash of the component's new
+  `Persist::KIND` and its new `Persist::VERSION`. `Cx::restored` gives `None` for
+  state saved by a component of another kind at the same place, and for bytes left
+  after the value; it calls the new `Persist::migrate` for state of another
+  version. An empty `KIND`, the default, checks no kind, so existing
+  implementations compile and restore as before. The saved envelope changed: bytes
+  saved by an earlier version give `RestoreOutcome::Corrupt` or
+  `RestoreOutcome::SchemaChanged`, and the application starts clean. The showcase
+  sets a `KIND` on every saved component and raises its schema to 3.
+- `Cx::destroy` and `Cx::set_child_phase` return `Result<(), NotOwnChild>`, as
+  `Cx::send` does. A target that is not a live direct child, such as a grandchild
+  or a child already removed, gives `Err(NotOwnChild)`. Before, both did nothing
+  and returned `()`.
+- `Tree::set_work_limit` now bounds all the work of one operation together:
+  delivering queued messages and outputs, and removing the components of dropped
+  routers and scopes, one unit per component. Before, removals were not counted and
+  each pass of the loop in one operation started a fresh limit, so dropping a large
+  router removed all its components in one operation.
+- `Cx::reusing_routers` is removed. Use `Cx::replace_router`, which takes the old
+  router itself, so two live routers can no longer hold one id. A router id no
+  longer has a generation, and the tree keeps no record of moved ids.
+- `router_ids` and `destroy` of `Stack`, `Slot`, `Pages`, `Panels`, `Items` and
+  `ChildSet` are methods of `router::Router` instead of inherent methods. Import
+  the trait to call them. `router_ids` returns `impl IntoIterator<Item = RouterId>`
+  instead of an array.
+- Numbered children past 2^61 in one parent save nothing, so their keys never
+  reach those of named routers.
+- `Tree::back_progress` and `BackGesture` are removed: a gesture's progress stays
+  in the UI, which animates it. `Tree::gesture` is replaced by
+  `Tree::gesture_target`, which returns the gesture's target `NodeId`.
+- `compono_ffi::Project`, `NativeChild`, `RouterEntry` and `NativeTree::model` are
+  removed. An application reads its models in its own exported functions with
+  `NativeTree::read`, as the native showcase does.
 - Swift: `ComponoTree` holds its bindings weakly. Before, the bindings held the tree
   as their listener and the tree held the bindings, so neither was ever freed.
   `ComponoRoot` keeps the bindings; code that calls `attach` directly keeps them
@@ -265,6 +229,27 @@ compares with the unpublished 0.0.0 tree.
 
 ### Fixed
 
+- `ChildStack` in the Swift package and the Compose library played the Back
+  animation after `bring_to_front` of an older entry, because it compared entry
+  keys. It now moves back only when the entry it showed is gone and the new one was
+  below it. The Compose `ChildStack` takes a new optional `node` parameter, the
+  address of an entry's component, to tell a parked entry from a destroyed one.
+- A task started with `Cx::perform` whose future or `to_msg` panics no longer
+  leaves its guard in the component until the component is removed. In builds that
+  unwind, the panic stops at the task, the next pump releases the guard, and the
+  component receives nothing from it.
+- A `NativeTree` dropped on a thread other than its owner calls
+  `Platform::schedule_pump`, so the owner frees the tree, its `Platform` and the
+  native listener. Before, they stayed in memory until the owner happened to make
+  another call. `NativeTree` now holds its `Platform`.
+- A task started with `Cx::perform_local` is listed for the next pump once, however
+  often its waker is called, and the host is woken once for it. Before, every
+  wake-up added an entry and woke the host, so a waker called again and again from
+  another thread between two pumps grew the list without limit.
+- A save made while a work limit had left a dropped router's entries for a later
+  operation saved them too, under the keys their replacement now uses. A later
+  launch could give the replacement's children that state. Entries queued for
+  removal are no longer saved.
 - `visible_rows` overflowed on a viewport that is infinite or very large.
 - A restored `Stack`, `Slot` or `ChildSet` trusted the keys and the counter in saved
   bytes. Damaged bytes could give two entries one key, and so one entry the state of
@@ -293,3 +278,7 @@ compares with the unpublished 0.0.0 tree.
 - `Items::restore_or` took its identity in saved state before it refused repeated
   keys. A router built in its place then moved the identity of every later router of
   that parent, which lost their saved state or gave it to an entry of another router.
+
+### Licence
+
+- Compono is licensed under Apache-2.0. Each crate's package includes `LICENSE`.

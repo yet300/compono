@@ -5,12 +5,13 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 readme = "README.md"
 keywords = ["compono", "tokio", "async", "ui"]
 categories = ["gui", "asynchronous"]
 
 [dependencies]
-compono = { version = "1.0.0-rc.1", path = "../compono" }
+compono = { version = "1.0.0-rc", path = "../compono" }
 tokio = { version = "1", default-features = false, features = ["rt"] }
 
 [dev-dependencies]

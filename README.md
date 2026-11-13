@@ -33,13 +33,31 @@ impl Component for Counter {
 
 ## Status
 
-Release candidate 1.0.0-rc.1, not published. `CHANGELOG.md` lists what it contains,
-`VERSIONING.md` says what a version number promises, and the minimum Rust version is
-1.96. The core and the egui, iced and GPUI adapters work on
-desktop, where state is saved to a file and the system's Back shortcuts work. The egui
-showcase also runs in a browser, with browser history and session storage. SwiftUI and
-Compose work through `compono-ffi` on simulators. Real devices have not been tested.
+Release candidate 1.0.0-rc, published for testing in projects: the crates on
+crates.io, the Swift package by this repository's URL at tag `v1.0.0-rc`.
+`CHANGELOG.md` lists what it contains, `VERSIONING.md` says what a version number
+promises, and the minimum Rust version is 1.96. The core and the egui, iced and GPUI
+adapters work on desktop, where state is saved to a file and the system's Back
+shortcuts work. The egui showcase also runs in a browser, with browser history and
+session storage. SwiftUI and Compose work through `compono-ffi` on simulators. Real
+devices have not been tested.
 `ARCHITECTURE.md` lists what has and has not been verified.
+
+## Install
+
+Pin the release candidate exactly, since it can still change before `1.0.0`:
+
+```toml
+[dependencies]
+compono = "=1.0.0-rc"
+compono-egui = "=1.0.0-rc" # or compono-iced, compono-gpui, compono-ffi
+```
+
+A Swift application adds the package by URL:
+
+```swift
+.package(url: "https://github.com/yet300/compono", exact: "1.0.0-rc")
+```
 
 ## Layout
 
