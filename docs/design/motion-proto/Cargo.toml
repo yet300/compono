@@ -1,0 +1,16 @@
+[package]
+name = "motion-proto"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+
+[dev-dependencies]
+egui = "=0.37.0"
+
+[profile.release]
+debug = false
+
+# A standalone prototype, outside the Compono workspace.
+[workspace]
