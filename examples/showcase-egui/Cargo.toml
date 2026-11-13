@@ -1,0 +1,28 @@
+[package]
+name = "showcase-egui"
+description = "The Compono showcase drawn with egui"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+compono = { path = "../../crates/compono" }
+compono-egui = { path = "../../crates/compono-egui" }
+compono-desktop = { path = "../../crates/compono-desktop" }
+egui = "0.37"
+showcase = { path = "../showcase" }
+
+# The desktop window. The web build in `showcase-web` uses only the library.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+compono-tokio = { path = "../../crates/compono-tokio" }
+eframe = "0.37"
+tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "time"] }
+
+[dev-dependencies]
+compono-test = { path = "../../crates/compono-test" }
+egui_kittest = "0.37"
+
+[lints]
+workspace = true
