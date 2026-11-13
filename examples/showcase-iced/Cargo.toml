@@ -1,0 +1,28 @@
+[package]
+name = "showcase-iced"
+description = "The Compono showcase drawn with iced"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+compono = { path = "../../crates/compono" }
+compono-iced = { path = "../../crates/compono-iced" }
+compono-desktop = { path = "../../crates/compono-desktop" }
+compono-tokio = { path = "../../crates/compono-tokio" }
+iced = "0.14"
+iced_aw = { version = "0.14.1", default-features = false, features = ["badge", "card", "tab_bar"] }
+# GPUI turns on a codespan-reporting feature that naga 27, used by iced, only
+# accepts when its own feature is on too. This matters only in a build with both.
+naga = { version = "27", default-features = false, features = ["termcolor"] }
+showcase = { path = "../showcase" }
+tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "time"] }
+
+[dev-dependencies]
+compono-test = { path = "../../crates/compono-test" }
+iced_test = "0.14"
+
+[lints]
+workspace = true

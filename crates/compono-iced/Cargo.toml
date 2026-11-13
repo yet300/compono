@@ -1,0 +1,21 @@
+[package]
+name = "compono-iced"
+description = "Connects a Compono tree to iced"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+readme = "README.md"
+keywords = ["compono", "iced", "ui", "navigation"]
+categories = ["gui"]
+
+[dependencies]
+compono = { version = "1.0.0-rc.1", path = "../compono" }
+compono-desktop = { version = "1.0.0-rc.1", path = "../compono-desktop" }
+iced = { version = "0.14", default-features = false, features = ["thread-pool"] }
+
+[dev-dependencies]
+compono-test = { version = "1.0.0-rc.1", path = "../compono-test" }
+
+[lints]
+workspace = true
