@@ -1,0 +1,22 @@
+[package]
+name = "compono-gpui"
+description = "Connects a Compono tree to GPUI"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+readme = "README.md"
+keywords = ["compono", "gpui", "ui", "navigation"]
+categories = ["gui"]
+
+[dependencies]
+compono = { version = "1.0.0-rc.1", path = "../compono" }
+compono-desktop = { version = "1.0.0-rc.1", path = "../compono-desktop" }
+gpui = { package = "gpui-pre", version = "=0.3.12" }
+
+[dev-dependencies]
+compono-test = { version = "1.0.0-rc.1", path = "../compono-test" }
+gpui = { package = "gpui-pre", version = "=0.3.12", features = ["test-support"] }
+
+[lints]
+workspace = true

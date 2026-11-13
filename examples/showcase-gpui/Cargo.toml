@@ -1,0 +1,27 @@
+[package]
+name = "showcase-gpui"
+description = "The Compono showcase drawn with GPUI"
+version.workspace = true
+edition.workspace = true
+# gpui-pre-macos needs a newer Rust than the libraries promise in VERSIONING.md.
+rust-version = "1.99"
+license.workspace = true
+publish = false
+
+[dependencies]
+compono = { path = "../../crates/compono" }
+compono-gpui = { path = "../../crates/compono-gpui" }
+compono-desktop = { path = "../../crates/compono-desktop" }
+gpui = { package = "gpui-pre", version = "=0.3.12" }
+gpui-component = "0.9.1"
+# Opens windows on the host OS. Shaders compile at startup, so building does not
+# need Xcode's Metal toolchain.
+gpui_platform = { package = "gpui-pre-platform", version = "=0.3.12", features = ["font-kit", "wayland", "x11", "runtime_shaders"] }
+showcase = { path = "../showcase" }
+
+[dev-dependencies]
+gpui = { package = "gpui-pre", version = "=0.3.12", features = ["test-support"] }
+gpui-component = { version = "0.9.1", features = ["test-support"] }
+
+[lints]
+workspace = true
