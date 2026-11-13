@@ -34,7 +34,8 @@ impl Component for Counter {
 ## Status
 
 Release candidate 1.0.0-rc, published for testing in projects: the crates on
-crates.io, the Swift package by this repository's URL at tag `v1.0.0-rc`.
+crates.io, the Compose library on Maven Central, and the Swift package by this
+repository's URL at tag `v1.0.0-rc`.
 `CHANGELOG.md` lists what it contains, `VERSIONING.md` says what a version number
 promises, and the minimum Rust version is 1.96. The core and the egui, iced and GPUI
 adapters work on desktop, where state is saved to a file and the system's Back
@@ -57,6 +58,12 @@ A Swift application adds the package by URL:
 
 ```swift
 .package(url: "https://github.com/yet300/compono", exact: "1.0.0-rc")
+```
+
+An Android application adds the Compose library from Maven Central:
+
+```kotlin
+implementation("io.github.yet300:compono:1.0.0-rc")
 ```
 
 ## Layout
