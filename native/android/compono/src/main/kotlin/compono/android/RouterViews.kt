@@ -1,8 +1,8 @@
 package compono.android
 
+import android.provider.Settings
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animate
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -30,22 +31,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
-
-/** How a stack moves between entries. */
-enum class StackAnimation {
-    /** The new entry slides over the old one, and Back slides it off. */
-    Slide,
-    Fade,
-    None,
-}
-
-private const val TRANSITION_MILLIS = 280
-
-/** How far a covered entry sits to the left, as a share of the width. */
-private const val PARALLAX = 0.3f
 
 private class StackMotion<C : Any>(first: C) {
     var shown by mutableStateOf(first)
@@ -53,9 +44,22 @@ private class StackMotion<C : Any>(first: C) {
     var forward by mutableStateOf(true)
     var progress by mutableFloatStateOf(0f)
     var generation by mutableIntStateOf(0)
+
+    /** The key of the entry Back would reveal under [shown], read at the last composition. */
+    var below: Long? = null
 }
 
-private class Layer<C>(val child: C, val shift: () -> Float, val alpha: () -> Float = { 1f })
+private class Layer<C>(val child: C, val style: () -> LayerStyle)
+
+/** Reads Android's animator duration scale, which "Remove animations" sets to 0. */
+@Composable
+private fun rememberMotionPreference(): MotionPreference {
+    val context = LocalContext.current
+    return remember(context) {
+        val scale = Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
+        motionPreference(scale)
+    }
+}
 
 /**
  * Draws the active entry of a stack, with transitions and an interactive Back.
@@ -65,19 +69,48 @@ private class Layer<C>(val child: C, val shift: () -> Float, val alpha: () -> Fl
  *
  * Pass [tree], [owner] and [previous] to follow Back gestures aimed at the component
  * that owns this stack. [previous] is the entry that Back would reveal.
+ *
+ * The stack moves back only when the entry it showed is gone and the new one was
+ * below it, so `bring_to_front` moves forward. Telling a parked entry from a
+ * destroyed one needs [tree] and [node], the address of an entry's component.
+ * Without them, only a change that reveals [previous] moves back.
+ *
+ * [animation] is the Material look by default: shared axis X on the standard spatial
+ * spring, and the Material predictive Back. "Remove animations" in the system's
+ * settings turns motion off.
  */
 @Composable
 fun <C : Any> ChildStack(
     active: C,
     key: (C) -> Long,
     modifier: Modifier = Modifier,
-    animation: StackAnimation = StackAnimation.Slide,
+    animation: StackAnimation = StackAnimation.Platform,
     tree: ComponoTree? = null,
     owner: Long? = null,
     previous: C? = null,
+    node: ((C) -> Long)? = null,
     background: Color = Color.White,
     content: @Composable (C) -> Unit,
 ) {
+    StackLayers(active, key, modifier, animation, tree, owner, previous, node, background, byOrder = false, content)
+}
+
+@Composable
+private fun <C : Any> StackLayers(
+    active: C,
+    key: (C) -> Long,
+    modifier: Modifier,
+    animation: StackAnimation,
+    tree: ComponoTree?,
+    owner: Long?,
+    previous: C?,
+    node: ((C) -> Long)?,
+    background: Color,
+    byOrder: Boolean,
+    content: @Composable (C) -> Unit,
+) {
+    val preference = rememberMotionPreference()
+    val chosen = remember(animation, preference) { animation.forPreference(preference) }
     val motion = remember { StackMotion(active) }
     if (tree != null && owner != null) {
         DisposableEffect(tree, owner) {
@@ -87,57 +120,90 @@ fun <C : Any> ChildStack(
     }
     if (key(active) != key(motion.shown)) {
         val committed = tree != null && owner != null && tree.wasCommitted(owner)
-        if (committed || animation == StackAnimation.None) {
+        if (committed || chosen.transition == StackTransition.None) {
             motion.outgoing = null
-            if (committed) SideEffect { tree?.clearCommitted() }
+            if (committed) SideEffect { tree.clearCommitted() }
         } else {
-            motion.forward = key(active) >= key(motion.shown)
+            val shown = motion.shown
+            motion.forward = if (byOrder) {
+                key(active) >= key(shown)
+            } else {
+                val shownKey = key(shown)
+                val activeKey = key(active)
+                if (node == null || tree == null) {
+                    activeKey != motion.below
+                } else {
+                    val remains = tree.containsNode(node(shown))
+                    stackDirection(shownKey, activeKey, motion.below, remains) == StackDirection.Forward
+                }
+            }
             motion.outgoing = motion.shown
             motion.progress = 0f
             motion.generation += 1
         }
     }
     motion.shown = active
+    motion.below = previous?.let(key)
     LaunchedEffect(motion.generation) {
         if (motion.generation > 0) {
-            animate(0f, 1f, animationSpec = tween(TRANSITION_MILLIS)) { value, _ -> motion.progress = value }
+            animate(0f, 1f, animationSpec = chosen.spec) { value, _ -> motion.progress = value }
             motion.outgoing = null
             motion.progress = 0f
         }
     }
     val gesture = tree?.gesture?.takeIf { it.target == owner }
     val outgoing = motion.outgoing
-    val layers: List<Layer<C>> = when {
-        gesture != null -> buildList {
-            if (previous != null) add(Layer(previous, { -PARALLAX * (1f - gesture.progress) }))
-            add(Layer(active, { gesture.progress }))
-        }
-        outgoing == null -> listOf(Layer(active, { 0f }))
-        animation == StackAnimation.Fade -> listOf(
-            Layer(outgoing, { 0f }, { 1f - motion.progress }),
-            Layer(active, { 0f }, { motion.progress }),
-        )
-        motion.forward -> listOf(
-            Layer(outgoing, { -PARALLAX * motion.progress }),
-            Layer(active, { 1f - motion.progress }),
-        )
-        else -> listOf(
-            Layer(active, { -PARALLAX * (1f - motion.progress) }),
-            Layer(outgoing, { motion.progress }),
-        )
-    }
+    val density = LocalDensity.current
     BoxWithConstraints(modifier.clipToBounds()) {
         val width = constraints.maxWidth.toFloat()
+        val height = constraints.maxHeight.toFloat()
+        val widthDp = maxWidth.value
+        val heightDp = maxHeight.value
+        val transition = chosen.transition
+        val layers: List<Layer<C>> = when {
+            gesture != null -> {
+                val frame = {
+                    val touch = with(density) { gesture.touchTravel.toDp().value }
+                    backFrame(chosen.back, gesture.progress, gesture.edge, touch, gesture.finish, widthDp, heightDp)
+                }
+                buildList {
+                    if (previous != null) add(Layer(previous) { frame().first })
+                    add(Layer(active) { frame().second })
+                }
+            }
+            outgoing == null -> listOf(Layer(active) { LayerStyle() })
+            motion.forward -> listOf(
+                Layer(outgoing) { layer(transition, Role.ExitBack, motion.progress, widthDp) },
+                Layer(active) { layer(transition, Role.EnterFront, motion.progress, widthDp) },
+            )
+            else -> listOf(
+                Layer(active) { layer(transition, Role.EnterBack, motion.progress, widthDp) },
+                Layer(outgoing) { layer(transition, Role.ExitFront, motion.progress, widthDp) },
+            )
+        }
         for (layer in layers) {
             key(key(layer.child)) {
                 Box(
                     Modifier
                         .fillMaxSize()
                         .graphicsLayer {
-                            translationX = layer.shift() * width
-                            alpha = layer.alpha()
+                            val style = layer.style()
+                            translationX = style.offsetX * width
+                            translationY = style.offsetY * height
+                            scaleX = style.scale
+                            scaleY = style.scale
+                            alpha = style.opacity
+                            if (style.cornerRadius > 0f) {
+                                shape = RoundedCornerShape(style.cornerRadius.dp)
+                                clip = true
+                            }
                         }
-                        .background(background),
+                        .background(background)
+                        .drawWithContent {
+                            drawContent()
+                            val dim = layer.style().dim
+                            if (dim > 0f) drawRect(Color.Black, alpha = dim)
+                        },
                 ) {
                     content(layer.child)
                 }
@@ -170,7 +236,7 @@ fun <C : Any> ChildPages(
     content: @Composable (C) -> Unit,
 ) {
     if (active != null) {
-        ChildStack(active, key, modifier, background = background, content = content)
+        StackLayers(active, key, modifier, StackAnimation.Slide, null, null, null, null, background, byOrder = true, content)
     }
 }
 

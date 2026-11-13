@@ -55,6 +55,12 @@ GRADLE=$(echo ~/.gradle/wrapper/dists/gradle-9.8.1-bin/*/gradle-9.8.1/bin/gradle
 
 `compono-ffi`'s own tests run with `cargo test -p compono-ffi` in the main workspace.
 
+`MotionTests` in both packages compare the stack formulas with
+`crates/compono-motion/golden/motion.csv`. After changing a preset in
+`compono-motion`, rewrite the table with
+`cargo run -p compono-motion --example golden > crates/compono-motion/golden/motion.csv`,
+then change `Motion.swift` and `Motion.kt` until both suites pass.
+
 ## Rules that come from bugs already hit
 
 - Export the root's standard methods with exactly these Rust names: `new(listener,

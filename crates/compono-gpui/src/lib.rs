@@ -8,6 +8,7 @@
 mod back;
 mod component_view;
 mod host;
+mod motion;
 mod navigation;
 mod spawner;
 mod view;
@@ -16,6 +17,7 @@ mod window;
 pub use back::{is_back_button, is_back_key};
 pub use component_view::{ComponentViews, Draw};
 pub use host::{Changes, GpuiHost};
+pub use motion::set_motion;
 pub use navigation::{ListView, RouterView};
 pub use spawner::GpuiSpawner;
 pub use view::{TreeView, listen, send, update};

@@ -56,6 +56,7 @@ fun CountersContent(component: CountersComponent, modifier: Modifier = Modifier)
                 tree = LocalComponoTree.current,
                 owner = component.node(),
                 previous = component.revealed(),
+                node = ChildRef::node,
                 background = MaterialTheme.colorScheme.background,
             ) { child ->
                 CounterContent(rememberComponent(child.node) { component.counter(child) })

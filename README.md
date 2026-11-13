@@ -48,6 +48,7 @@ Compose work through `compono-ffi` on simulators. Real devices have not been tes
 | `crates/compono` | The tree, components, routers, tasks and persistence |
 | `crates/compono-test` | Recording host, virtual time, host conformance checks |
 | `crates/compono-egui`, `-iced`, `-gpui` | UI adapters |
+| `crates/compono-motion` | Router transitions: curves, springs, platform presets, layer values; `no_std`, no dependencies |
 | `crates/compono-ffi` | The Rust side of SwiftUI and Compose: thread-bound tree, models |
 | `crates/compono-tokio` | Task spawner on Tokio |
 | `crates/compono-desktop` | Saved-state file and each system's Back shortcuts |

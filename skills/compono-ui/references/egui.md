@@ -65,6 +65,16 @@ pub fn view(ui: &mut Ui, tree: &Tree, handle: Handle<Counters>, out: &mut Outbox
 ```
 
 - `router.view(ui, |ui, child| ...)` for `Stack`, `Slot`, `Pages` and `Panels`.
+- A `Stack` animates its changes with `compono_motion::Motion::desktop()`, a 150 ms
+  fade. `compono_egui::set_motion(ctx, Motion::web())` changes the motion of every
+  router in a context; `StackView::new(&stack).motion(Motion::material()).show(ui, |ui, child| ...)`
+  changes one stack. A popped entry is replayed from its last frame and takes no input.
+- With the same timing, a `Slot` fades its entry in and out, even one drawn in an
+  `egui::Modal`; `Pages` slide by page order; `Panels` in `PanelsMode::Single`
+  slide the deepest panel in and out. `Motion::none()` turns all of it off.
+- `compono_egui::set_motion_preference(ctx, MotionPreference::Reduced)` passes the
+  system's reduced-motion setting, which egui does not read: everything fades in
+  place. In a browser, take it from `compono_web::prefers_reduced_motion()`.
 - `ListView::new(&items, handle, Msg::Window).row_height(h).view(ui, out, |ui, out, index, child| ...)`.
 - Give every `ScrollArea` an `id_salt`, so two lists on one screen do not clash.
 - Draw only glyphs the font has. egui's default font has no emoji.

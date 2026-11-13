@@ -55,6 +55,16 @@ pub trait PanelTypes: 'static {
     type ExtraChild: 'static;
 }
 
+/// The visit key of each open panel, from [`Panels::keys`].
+///
+/// Each panel counts its own visits, so a key is unique only within its panel.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub struct PanelKeys {
+    pub main: Option<u64>,
+    pub details: Option<u64>,
+    pub extra: Option<u64>,
+}
+
 /// One panel on screen, as given by [`Panels::visible`].
 pub enum Panel<'a, T: PanelTypes> {
     /// The main panel's value.
@@ -228,6 +238,16 @@ impl<T: PanelTypes, P: Component> Panels<T, P> {
     /// Returns the value of the extra panel.
     pub fn extra(&self) -> Option<&T::ExtraChild> {
         self.extra.active()
+    }
+
+    /// Returns the visit key of each open panel, for UI state keys and transitions.
+    #[must_use]
+    pub fn keys(&self) -> PanelKeys {
+        PanelKeys {
+            main: self.main.active_key(),
+            details: self.details.active_key(),
+            extra: self.extra.active_key(),
+        }
     }
 
     /// Returns the route of the main panel.

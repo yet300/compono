@@ -50,7 +50,7 @@ fun ComponoHost(tree: ComponoTree, content: @Composable () -> Unit) {
     PredictiveBackHandler(enabled = tree.canBack) { events ->
         val started = tree.beginGesture()
         try {
-            events.collect { if (started) tree.updateGesture(it.progress) }
+            events.collect { if (started) tree.updateGesture(it.progress, it.swipeEdge, it.touchY) }
             if (started) scope.launch { tree.settleGesture(commit = true) }
         } catch (cancelled: CancellationException) {
             if (started) scope.launch { tree.settleGesture(commit = false) }

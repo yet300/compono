@@ -1327,6 +1327,7 @@ version = "1.0.0-rc.1"
 dependencies = [
  "compono",
  "compono-desktop",
+ "compono-motion",
  "compono-test",
  "egui",
 ]
@@ -1345,6 +1346,7 @@ version = "1.0.0-rc.1"
 dependencies = [
  "compono",
  "compono-desktop",
+ "compono-motion",
  "compono-test",
  "gpui-pre",
 ]
@@ -1355,9 +1357,14 @@ version = "1.0.0-rc.1"
 dependencies = [
  "compono",
  "compono-desktop",
+ "compono-motion",
  "compono-test",
  "iced",
 ]
+
+[[package]]
+name = "compono-motion"
+version = "1.0.0-rc.1"
 
 [[package]]
 name = "compono-test"
@@ -7913,6 +7920,7 @@ dependencies = [
  "compono",
  "compono-desktop",
  "compono-egui",
+ "compono-motion",
  "compono-test",
  "compono-tokio",
  "eframe",

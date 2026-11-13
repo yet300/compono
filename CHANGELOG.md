@@ -7,6 +7,31 @@ number promises.
 
 ### Added
 
+- `compono-motion`, a new `no_std` crate with no dependencies, holds the router
+  transitions every UI shares: `Easing`, `Spring`, `Timing`, `LayerStyle`,
+  `Direction`, `Transition`, `BackEvent`, `BackAnimation`, `MotionPreference`,
+  `Motion` with the presets `material`, `cupertino`, `desktop`, `web` and `none`,
+  `StackChange::between` and `TransitionState`. Its `golden` example writes
+  `golden/motion.csv`, the values the Swift and Kotlin tests compare with.
+- In egui, a `Stack` drawn with `view` animates push and pop with
+  `Motion::desktop()`. `compono_egui::set_motion` sets the motion of every router
+  in a context, and `compono_egui::StackView` sets it for one stack. A popped entry
+  is replayed from the shapes of its last frame. `showcase-web` uses `Motion::web()`.
+- In egui, a `Slot` fades its entry in and out, `Pages` slide by page order, and
+  `Panels` in `PanelsMode::Single` slide the deepest panel in and out, with the
+  timing of the context's motion. The replay covers every layer an entry paints,
+  so a dialog drawn in an `egui::Modal` fades out too.
+- In iced and GPUI, `view` on a `Stack`, `Slot`, `Pages` or `Panels` animates the
+  same changes with `Motion::desktop()`, and `compono_iced::set_motion` and
+  `compono_gpui::set_motion` change the motion of the whole application. Only the
+  entry that becomes active moves; the one that leaves disappears at once. GPUI
+  applies offsets and opacity but not scale. `compono-iced` now enables iced's
+  `advanced` feature for its widget.
+- Reduced motion: `compono_egui::set_motion_preference` and
+  `compono_iced::set_motion_preference` take the user's `MotionPreference`,
+  `compono-gpui` follows GPUI's `App::reduce_motion`, and
+  `compono_web::prefers_reduced_motion` reads
+  `matchMedia("(prefers-reduced-motion: reduce)")`. `showcase-web` passes it to egui.
 - `Tree::set_poll_limit` bounds how many `Cx::perform_local` tasks one pump polls,
   1 024 by default. A limit of 0 is treated as 1.
 - `Host::diagnostic`, a provided method that does nothing by default, receives a
@@ -24,10 +49,29 @@ number promises.
   the saved state under its ids, then builds the new router, which takes those ids
   in order. The new router decides what state to keep, so one restored from the
   old router's snapshot gives entries not yet shown their state when they are.
+- `Slot::active_key`, `Pages::child` and `Panels::keys`, with the new
+  `PanelKeys`, give the visit key of a slot's entry, the value of any page that
+  exists and the visit key of each open panel, so a UI can animate between them.
 - `router::Router`, the trait of every router, with `router_ids` and `destroy`.
   The six built-in routers and the showcase's `Filmstrip` implement it.
 
 ### Changed
+
+- The Swift package's `StackAnimation` is now a struct with `transition`
+  (`StackTransition`), `animation` (a SwiftUI `Animation`) and `back`
+  (`BackGestureStyle`). `.slide`, `.fade` and `.none` remain, and `.platform`, the
+  default, slides on UIKit's push spring with a 30 % parallax and a 12 % shade, all
+  three measured on `UINavigationController` pushes. `Motion::cupertino()` and
+  `Spring::CUPERTINO` use the same spring: response 0.29 s, critically damped.
+  A released swipe settles on that spring at the finger's speed:
+  `ComponoTree.finishGesture(commit:speed:)`. With `accessibilityReduceMotion` the
+  stack fades in place.
+- The Compose library's `StackAnimation` is now a class with `transition`
+  (`StackTransition`), `spec` and `back` (`BackAnimation`). The default is Material:
+  shared axis X on `spring(0.9f, 700f)` with `BackAnimation.Predictive`, which
+  follows `BackEventCompat`'s edge and touch. `StackAnimation.Slide`, `Fade` and
+  `None` remain. `ComponoTree.updateGesture` takes the event's edge and touch, and
+  "Remove animations" (animator duration scale 0) turns stack motion off.
 
 - `Tree::set_work_limit` no longer bounds polls of `Cx::perform_local` tasks,
   which have their own limit, `Tree::set_poll_limit`. Before, one limit of
@@ -73,6 +117,11 @@ number promises.
 
 ### Fixed
 
+- `ChildStack` in the Swift package and the Compose library played the Back
+  animation after `bring_to_front` of an older entry, because it compared entry
+  keys. It now moves back only when the entry it showed is gone and the new one was
+  below it. The Compose `ChildStack` takes a new optional `node` parameter, the
+  address of an entry's component, to tell a parked entry from a destroyed one.
 - A task started with `Cx::perform` whose future or `to_msg` panics no longer
   leaves its guard in the component until the component is removed. In builds that
   unwind, the panic stops at the task, the next pump releases the guard, and the

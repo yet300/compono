@@ -90,6 +90,13 @@ pub fn view(tree: &Tree, handle: Handle<Counters>) -> View<'_> {
 - `router.view(|child| ...)` returns `View` for `Stack` and `Panels`, and
   `Option<View>` for `Slot` and `Pages`.
 - `ListView::new(&items, handle, Msg::Window).row_height(h).view(|index, child| ...)`.
+- Router views animate with `compono_motion::Motion::desktop()`, a 150 ms fade;
+  `compono_iced::set_motion(Motion::web())` changes it for the whole application. A `Stack` moves its
+  new entry in, a `Slot` fades in, `Pages` slide by page order and `Panels` in
+  `PanelsMode::Single` slide the deepest panel in. An entry that leaves disappears at
+  once, because an `Element` cannot outlive the component it reads.
+- `compono_iced::set_motion_preference(MotionPreference::Reduced)` passes the
+  system's reduced-motion setting, which iced does not read.
 - A widget callback that takes a value, such as `TabBar::new(on_select)` or
   `toggler(..).on_toggle(..)`, returns `send(handle, msg)` from its closure.
 - `iced_aw` adds `TabBar`, `Card` and `Badge` for a standard look.

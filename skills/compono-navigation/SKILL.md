@@ -199,6 +199,7 @@ impl Component for Settings {
 ```
 
 `show` replaces whatever is open. `close` removes it. `active()` is `Option`.
+`active_key()` names the open visit, new on every `show`, for UI keys and transitions.
 Save with `snapshot()` and `Slot::restore(saved, cx, build)`.
 
 ## Pages
@@ -210,7 +211,7 @@ pages.select(index, cx); // returns whether the selection moved
 
 The selected page is `Focused`. Pages within `retain` of it exist and are
 `Hidden`. Others have no component. Read `selected()`, `active()`, `routes()`
-and `live()`. `set_routes` changes the list. Save with `snapshot()` and
+and `live()`, and `child(index)` for any page that exists. `set_routes` changes the list. Save with `snapshot()` and
 `Pages::restore_or(saved, initial, retain, cx, build)`.
 
 ## Panels
@@ -234,7 +235,8 @@ panels.set_mode(PanelsMode::Single, cx); // from the window width
 
 The deepest open panel is `Focused`. Others that fit the mode are `Visible`, the
 rest `Hidden`. `pop` closes the deepest panel and `can_pop` feeds `fn back`.
-`visible()` yields `Panel::Main`, `Panel::Details` and `Panel::Extra` for the UI.
+`visible()` yields `Panel::Main`, `Panel::Details` and `Panel::Extra` for the UI,
+and `keys()` the visit key of each open panel.
 The UI decides the mode from the window size and sends it in.
 
 ## Items

@@ -170,8 +170,12 @@ public final class ComponoTree {
     }
 
     /// Ends the gesture, animating a stack to whichever side it ended on.
-    public func finishGesture(commit: Bool) {
+    ///
+    /// `speed` is how fast the finger moved when it let go, in shares of the width
+    /// per second; the settling spring starts at that speed.
+    public func finishGesture(commit: Bool, speed: CGFloat = 0) {
         guard let target = gesture?.target, settlingTo == nil else { return }
+        releaseSpeed = speed
         guard stacks[target] != nil else {
             endGesture(commit: commit, target: target)
             return
@@ -189,11 +193,16 @@ public final class ComponoTree {
     @ObservationIgnored var settle: (_ commit: Bool, _ done: @escaping @MainActor () -> Void) -> Void = { _, done in done() }
 
     @ObservationIgnored private var settlingTo: Bool?
+    @ObservationIgnored private var releaseSpeed: CGFloat = 0
     @ObservationIgnored private var gestureSerial = 0
 
     private func animateSettle(commit: Bool, done: @escaping @MainActor () -> Void) {
-        withAnimation(.easeOut(duration: 0.2), completionCriteria: .logicallyComplete) {
-            gesture?.progress = commit ? 1 : 0
+        let target: CGFloat = commit ? 1 : 0
+        let velocity = settleVelocity(progress: gesture?.progress ?? 0, target: target, speed: releaseSpeed)
+        // UIKit's push spring, continuing at the finger's speed, as UIKit does.
+        let spring = Animation.interpolatingSpring(platformSpring, initialVelocity: velocity)
+        withAnimation(spring, completionCriteria: .logicallyComplete) {
+            gesture?.progress = target
         } completion: {
             done()
         }
@@ -208,6 +217,11 @@ public final class ComponoTree {
         } else {
             bridge?.backCancel()
         }
+    }
+
+    /// Returns whether the component at `node` still exists.
+    func contains(_ node: Int64) -> Bool {
+        bridge?.contains(node: node) ?? false
     }
 
     func registerStack(_ owner: Int64) {

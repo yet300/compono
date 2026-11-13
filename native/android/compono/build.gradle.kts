@@ -29,3 +29,8 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
     testImplementation("junit:junit:4.13.2")
 }
+
+// The motion tests compare with the Rust crate's golden table, so a new table reruns them.
+tasks.withType<Test>().configureEach {
+    inputs.file("../../../crates/compono-motion/golden/motion.csv")
+}

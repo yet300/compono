@@ -1,0 +1,15 @@
+[package]
+name = "compono-motion"
+description = "Router transitions for Compono UIs: curves, springs, presets and layer values, with no std and no dependencies"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+readme = "README.md"
+keywords = ["ui", "animation", "navigation", "transition", "no-std"]
+categories = ["gui", "no-std"]
+
+[dependencies]
+
+[lints]
+workspace = true

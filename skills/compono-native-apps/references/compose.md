@@ -53,6 +53,7 @@ fun CountersContent(component: CountersComponent, modifier: Modifier = Modifier)
             tree = LocalComponoTree.current,
             owner = component.node(),
             previous = component.revealed(),
+            node = ChildRef::node,
         ) { child ->
             CounterContent(rememberComponent(child.node) { component.counter(child) })
         }
@@ -63,8 +64,13 @@ fun CountersContent(component: CountersComponent, modifier: Modifier = Modifier)
 - `observe(component.node())` first, then read `model()`.
 - `rememberComponent(key) { ... }` creates a component object once per key and
   closes it when it leaves the composition.
-- `ChildStack(active, key, tree = ..., owner = ..., previous = ...)` animates and
-  follows predictive Back. `ChildSlot`, `ChildPages`, `ChildPanels` and
+- `ChildStack(active, key, tree = ..., owner = ..., previous = ..., node = ...)`
+  animates and follows predictive Back. `node` gives an entry's address, so the
+  stack moves back only when the shown entry was destroyed and `bring_to_front`
+  moves forward. `animation = StackAnimation(transition, spec, back)` changes the
+  look; the default is Material (`StackTransition.SharedAxisX`, `spring(0.9f, 700f)`,
+  `BackAnimation.Predictive()`), and `StackAnimation.Slide`, `.Fade` and `.None` are
+  ready-made. `ChildSlot`, `ChildPages`, `ChildPanels` and
   `ChildList(count, onWindow) { row -> }` cover the other routers. `ChildList`
   reports the rows on screen plus `overscan` spare rows (10 by default).
 - Draw with Material 3: `NavigationSuiteScaffold` for tabs that become a rail on

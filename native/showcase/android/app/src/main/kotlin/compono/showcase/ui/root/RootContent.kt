@@ -25,6 +25,7 @@ fun RootContent(component: RootComponent, modifier: Modifier = Modifier) {
         tree = LocalComponoTree.current,
         owner = component.node(),
         previous = component.previous(),
+        node = { it.child.node },
         background = MaterialTheme.colorScheme.background,
     ) { screen ->
         when (screen.kind) {

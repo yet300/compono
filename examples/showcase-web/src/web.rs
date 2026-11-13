@@ -28,6 +28,7 @@ impl Page {
         let saved = store.as_ref().and_then(SessionStore::load);
         let services = Services::new(|delay| Box::pin(compono_web::sleep(delay)));
         let app = App::new(ctx, services, WebSpawner, saved.as_deref());
+        App::reduce_motion(ctx, compono_web::prefers_reduced_motion());
         let mut page = Self {
             app,
             history: History::new(ScreenPaths, showcase::saved::SCHEMA),

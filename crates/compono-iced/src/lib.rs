@@ -26,11 +26,13 @@
 mod action;
 mod back;
 mod host;
+mod motion;
 mod navigation;
 mod window;
 
 pub use action::{Action, send, wakes};
 pub use back::{BackRequest, back_requests, is_back};
 pub use host::IcedHost;
+pub use motion::{set_motion, set_motion_preference};
 pub use navigation::{ListView, RouterView};
 pub use window::{Presence, presence};

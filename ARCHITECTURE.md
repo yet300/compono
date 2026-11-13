@@ -26,6 +26,7 @@ crates/
   compono-egui      UI adapter: EguiHost, Outbox, BeforeDraw, window phase
   compono-iced      UI adapter: IcedHost, Action, wake and presence subscriptions
   compono-gpui      UI adapter: GpuiHost, TreeView, GpuiSpawner, event listeners
+  compono-motion    router transitions: curves, springs, presets, layer values; no_std, no deps
   compono-ffi       native UI boundary: NativeTree, Platform, phase codes
   compono-tokio     Spawner on Tokio
   compono-desktop   saved-state file and the Back shortcuts of each desktop system
@@ -301,6 +302,54 @@ look for an equal route need `R: PartialEq` and are linear in stack depth. Recon
 allocates nothing beyond collecting the input.
 
 Animations live in the UI, driven by its frame clock.
+
+### Motion
+
+`compono-motion` holds what every UI shares about moving between entries, as plain
+values and pure functions: easing curves, springs, the transitions and Back
+gestures, and a preset per platform (`Motion::material`, `cupertino`, `desktop`,
+`web`). It holds no clock, so time and gesture progress are arguments, and it
+never allocates. Springs are integrated with fourth-order Runge-Kutta in steps of
+one millisecond, because `core` has no `exp`.
+
+`StackChange::between` compares a stack's entry keys before and after a change. It
+is backward only when the old active entry is gone and the new one was below it,
+so `bring_to_front` and `replace` move forward, as in Decompose. A Rust adapter
+keeps one `TransitionState` per router, starts it on a change and draws the
+`(key, LayerStyle)` layers that `frame(now)` returns, bottom first.
+
+The Swift package and the Compose library keep their own animation engines and
+never call Rust for motion. Their tests compare their values with
+`crates/compono-motion/golden/motion.csv`, which the crate's `golden` example
+writes and a crate test keeps current.
+
+egui draws the active entry live and replays the other one: each frame the adapter
+copies the shapes the active entry painted, and after a change it repaints that
+copy with the leaving layer's style. A popped entry's component is gone, so this is
+the only way to show it leave. A replayed entry takes no input. The copy covers
+every egui layer the entry painted, so a dialog in its own `Modal` layer fades out
+with its slot.
+
+Each router has its transition: a `Stack` uses its motion's, a `Slot` fades, `Pages`
+slide by page order, and `Panels` slide the deepest panel in when only one fits.
+All take the motion's timing.
+
+iced and GPUI cannot draw a component that is gone: an iced `Element` borrows the
+tree, and GPUI re-renders views whose bounds move. There, only the entry that
+becomes active moves: on a pop the revealed entry comes in and the popped one
+disappears at once, and on a push the new entry comes in over the background. The
+tree does not keep removed components for them. iced keeps the state in a widget
+and takes time from `RedrawRequested`; it has no subtree opacity, so it covers a
+fading entry with the theme's background. GPUI keeps it in element state, takes time
+from its executor's clock and moves the entry with offsets and opacity; it has no
+subtree transform, so scale is not applied.
+
+`MotionPreference` carries the system's reduced-motion setting into a preset:
+`Reduced` turns a transition that moves entries into a 150 ms fade and a Back
+gesture into a fade of the top entry, and `Off` removes motion. Each UI reads the
+setting where it can: `compono_web::prefers_reduced_motion` in a browser, GPUI's
+`App::reduce_motion`, SwiftUI's `accessibilityReduceMotion` and Android's animator
+duration scale. egui and iced take it from the application.
 
 ## Back
 
@@ -627,7 +676,17 @@ only those views, as `ComponentViews` does in GPUI.
 | Lazy list | `ChildList(count:onWindow:row:)` | `ChildList(count, onWindow, row)` |
 | Lifecycle and Back | `.componoRoot(root)` or `.componoLifecycle(tree)` | `ComponoHost(tree)` |
 
-A `ChildStack` slides or fades between entries and follows Back gestures. The
+A `ChildStack` moves between entries with a `StackAnimation`: its transition, its
+timing and its Back gesture, native by default. Compose uses Material's shared axis
+on the standard spatial spring and the Material predictive Back, which shrinks the
+top entry toward the far edge and follows the touch with `BackEvent`'s edge and
+height. SwiftUI slides on UIKit's push spring (response 0.29 s, measured) with a
+30 % parallax and a 12 % shade, and settles a released swipe on the same spring,
+starting at the finger's speed. The formulas repeat `compono-motion`'s, and each package's `MotionTests` compares them
+with the golden table. `accessibilityReduceMotion` turns the SwiftUI stack into a
+fade, and an animator duration scale of 0 turns the Compose stack's motion off. It moves
+back only when the entry it showed is destroyed and the new one was below it, so
+`bring_to_front` moves forward, as a push does. The
 component that leaves a stack is destroyed at once, as in Decompose, and the view on
 its way out is the one already drawn. `Stack::previous` gives the entry that Back
 would reveal, which the stack draws beneath the active one during a gesture. Its

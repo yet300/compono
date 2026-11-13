@@ -10,6 +10,7 @@ publish = false
 [dependencies]
 compono = { path = "../../crates/compono" }
 compono-egui = { path = "../../crates/compono-egui" }
+compono-motion = { path = "../../crates/compono-motion" }
 compono-desktop = { path = "../../crates/compono-desktop" }
 egui = "0.37"
 showcase = { path = "../showcase" }

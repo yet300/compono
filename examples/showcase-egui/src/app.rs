@@ -1,6 +1,7 @@
 use crate::ui;
 use compono::{Handle, Phase, Spawner, Tree};
 use compono_egui::{BeforeDraw, EguiHost, Outbox, back_requested, window_phase};
+use compono_motion::{Motion, MotionPreference};
 use egui::{Context, Ui};
 use showcase::Services;
 use showcase::feature::root::Root;
@@ -23,6 +24,14 @@ impl App {
         spawner: impl Spawner + 'static,
         saved: Option<&[u8]>,
     ) -> Self {
+        // Fades on the desktop, and the browser's own fade on the web.
+        let motion = if cfg!(target_arch = "wasm32") {
+            Motion::web()
+        } else {
+            Motion::desktop()
+        };
+        compono_egui::set_motion(ctx, motion);
+        Self::reduce_motion(ctx, false);
         let host = EguiHost::new(ctx.clone());
         let before_draw = host.before_draw();
         let mut tree = showcase::saved::tree(host, saved);
@@ -35,6 +44,17 @@ impl App {
             before_draw,
             phase: Phase::Hidden,
         }
+    }
+
+    /// Fades without moving anything when `reduced`, as the user asked the system.
+    /// egui does not read the setting, so the platform passes it in.
+    pub fn reduce_motion(ctx: &Context, reduced: bool) {
+        let preference = if reduced {
+            MotionPreference::Reduced
+        } else {
+            MotionPreference::Full
+        };
+        compono_egui::set_motion_preference(ctx, preference);
     }
 
     /// Encodes the tree for the next launch.
