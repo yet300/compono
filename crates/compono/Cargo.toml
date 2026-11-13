@@ -1,0 +1,42 @@
+[package]
+name = "compono"
+description = "UI-independent component tree: lifecycle, navigation and state between business logic and any UI"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+readme = "README.md"
+keywords = ["ui", "navigation", "component", "lifecycle", "state"]
+categories = ["gui", "no-std"]
+
+[features]
+default = ["std", "serde"]
+std = []
+serde = ["dep:serde", "dep:postcard"]
+
+[dependencies]
+hashbrown = { version = "0.17", default-features = false, features = ["default-hasher"] }
+serde = { version = "1", default-features = false, features = ["alloc", "derive"], optional = true }
+postcard = { version = "1", default-features = false, features = ["alloc"], optional = true }
+
+# Model checking of the concurrency module: RUSTFLAGS="--cfg loom".
+[target.'cfg(loom)'.dependencies]
+loom = "0.7"
+
+[dev-dependencies]
+proptest = { version = "1", default-features = false, features = ["std"] }
+
+[[example]]
+name = "navigation_cost"
+required-features = ["std"]
+
+[[example]]
+name = "set_scaling"
+required-features = ["std"]
+
+[[example]]
+name = "router_scaling"
+required-features = ["std"]
+
+[lints]
+workspace = true
