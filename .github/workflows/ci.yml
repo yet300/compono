@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+          targets: thumbv7em-none-eabihf, wasm32-unknown-unknown
+      - run: cargo fmt --all --check
+      - run: scripts/sync-skills.sh --check
+      - run: cargo clippy -p compono -p compono-test -p compono-tokio -p showcase --all-targets -- -D warnings
+      - run: cargo clippy -p compono --no-default-features -- -D warnings
+      - run: cargo clippy -p compono --no-default-features --features std -- -D warnings
+      - run: cargo clippy -p compono --no-default-features --features serde -- -D warnings
+      # The allocation budget is enforced by crates/compono/tests/allocations.rs.
+      - run: cargo test -p compono -p compono-test -p compono-tokio -p showcase
+      - run: cargo test -p compono --no-default-features
+      - run: cargo test -p compono --test loom --release
+        env:
+          RUSTFLAGS: --cfg loom
+          CARGO_TARGET_DIR: target/loom
+      - run: cargo check -p compono --no-default-features --target thumbv7em-none-eabihf
+      - run: cargo check -p compono --no-default-features --features serde --target thumbv7em-none-eabihf
+      - run: cargo check -p compono --target wasm32-unknown-unknown
+      - run: cargo clippy -p compono-desktop -p compono-web --all-targets -- -D warnings
+      - run: cargo test -p compono-desktop -p compono-web
+      - run: cargo clippy -p compono-web -p showcase-web --target wasm32-unknown-unknown -- -D warnings
+
+  # The minimum Rust version that `VERSIONING.md` promises.
+  msrv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.96
+        with:
+          targets: wasm32-unknown-unknown
+      - run: cargo check -p compono -p compono-test -p compono-tokio -p compono-desktop -p compono-web -p compono-ffi
+      - run: cargo check -p compono-web --target wasm32-unknown-unknown
+
+  workspace:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - run: cargo clippy --workspace --all-targets -- -D warnings
+      - run: cargo test --workspace
+      - run: cargo doc --workspace --no-deps
+        env:
+          RUSTDOCFLAGS: -D warnings
