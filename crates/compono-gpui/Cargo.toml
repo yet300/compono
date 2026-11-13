@@ -5,18 +5,19 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 readme = "README.md"
 keywords = ["compono", "gpui", "ui", "navigation"]
 categories = ["gui"]
 
 [dependencies]
-compono = { version = "1.0.0-rc.1", path = "../compono" }
-compono-desktop = { version = "1.0.0-rc.1", path = "../compono-desktop" }
-compono-motion = { version = "1.0.0-rc.1", path = "../compono-motion" }
+compono = { version = "1.0.0-rc", path = "../compono" }
+compono-desktop = { version = "1.0.0-rc", path = "../compono-desktop" }
+compono-motion = { version = "1.0.0-rc", path = "../compono-motion" }
 gpui = { package = "gpui-pre", version = "=0.3.12" }
 
 [dev-dependencies]
-compono-test = { version = "1.0.0-rc.1", path = "../compono-test" }
+compono-test = { version = "1.0.0-rc", path = "../compono-test" }
 gpui = { package = "gpui-pre", version = "=0.3.12", features = ["test-support"] }
 
 [lints]

@@ -5,12 +5,13 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 readme = "README.md"
 keywords = ["compono", "wasm", "browser", "history", "navigation"]
 categories = ["gui", "wasm", "web-programming"]
 
 [dependencies]
-compono = { version = "1.0.0-rc.1", path = "../compono" }
+compono = { version = "1.0.0-rc", path = "../compono" }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 js-sys = "0.3"

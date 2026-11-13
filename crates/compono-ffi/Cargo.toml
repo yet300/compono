@@ -5,15 +5,16 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
+repository.workspace = true
 readme = "README.md"
 keywords = ["compono", "ffi", "swiftui", "compose", "navigation"]
 categories = ["gui", "api-bindings"]
 
 [dependencies]
-compono = { version = "1.0.0-rc.1", path = "../compono" }
+compono = { version = "1.0.0-rc", path = "../compono" }
 
 [dev-dependencies]
-compono-test = { version = "1.0.0-rc.1", path = "../compono-test" }
+compono-test = { version = "1.0.0-rc", path = "../compono-test" }
 
 [lints]
 workspace = true

@@ -3,10 +3,11 @@ resolver = "3"
 members = ["crates/*", "examples/*"]
 
 [workspace.package]
-version = "1.0.0-rc.1"
+version = "1.0.0-rc"
 edition = "2024"
 rust-version = "1.96"
 license = "Apache-2.0"
+repository = "https://github.com/yet300/compono"
 
 [workspace.lints.rust]
 unsafe_code = "deny"

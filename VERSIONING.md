@@ -38,7 +38,7 @@ These are not part of the public interface:
 - The state that `History` stores in a browser history entry. An entry written by
   another version is treated as an entry the application does not know.
 
-A release candidate, such as `1.0.0-rc.1`, can still change in any way before `1.0.0`.
+A release candidate, such as `1.0.0-rc`, can still change in any way before `1.0.0`.
 
 ## UI toolkits
 
