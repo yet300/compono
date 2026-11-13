@@ -1,0 +1,24 @@
+# Rust
+target/
+
+# Generated bindings and web builds: `boltffi pack` and `build.sh` make them again
+dist/
+
+# Swift, Xcode, Gradle and Kotlin build output
+.build/
+.swiftpm/
+build/
+DerivedData/
+xcuserdata/
+.gradle/
+.kotlin/
+
+# Machine-specific paths
+local.properties
+
+# Binaries built by the benchmarks
+*.so
+benchmarks/ffi-boundary/out/bench-*
+
+# macOS
+.DS_Store
