@@ -1,0 +1,15 @@
+[package]
+name = "compono-desktop"
+description = "Desktop conventions for Compono: a saved-state file and the Back shortcuts of each system"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+readme = "README.md"
+keywords = ["compono", "desktop", "ui", "state"]
+categories = ["gui", "filesystem"]
+
+[dependencies]
+
+[lints]
+workspace = true

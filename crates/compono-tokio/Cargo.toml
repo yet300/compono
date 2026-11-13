@@ -1,0 +1,20 @@
+[package]
+name = "compono-tokio"
+description = "Runs Compono component tasks on Tokio"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+readme = "README.md"
+keywords = ["compono", "tokio", "async", "ui"]
+categories = ["gui", "asynchronous"]
+
+[dependencies]
+compono = { version = "1.0.0-rc.1", path = "../compono" }
+tokio = { version = "1", default-features = false, features = ["rt"] }
+
+[dev-dependencies]
+tokio = { version = "1", default-features = false, features = ["rt-multi-thread", "time"] }
+
+[lints]
+workspace = true
